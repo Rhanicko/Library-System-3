@@ -20,6 +20,7 @@ public class Admin {
 	    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	    frame.setLocationRelativeTo(null);
 	    frame.setLayout(new BorderLayout(10, 10));
+	    frame.setResizable(false);
 
 	    // Title Panel
 	    JPanel titlePanel = new JPanel();
@@ -74,54 +75,67 @@ public class Admin {
 	    frame.add(headerPanel, BorderLayout.NORTH); // Header (Title + Clock) at the top
 	    frame.add(mainPanel, BorderLayout.CENTER);
         // Action Listeners
-        addBookButton.addActionListener(e -> {
-            JTextField bookNameField = new JTextField();
-            JTextField authorField = new JTextField();
-            JTextField yearField = new JTextField();
+	    addBookButton.addActionListener(e -> {
+	        JTextField bookNameField = new JTextField();
+	        JTextField authorField = new JTextField();
+	        JTextField yearField = new JTextField();
+	        JTextField stockField = new JTextField();
 
-            JPanel panel = new JPanel(new GridLayout(3, 2, 5, 5));
-            panel.add(new JLabel("Book Name:"));
-            panel.add(bookNameField);
-            panel.add(new JLabel("Author:"));
-            panel.add(authorField);
-            panel.add(new JLabel("Year of Publication:"));
-            panel.add(yearField);
-            	
-         // Create the JOptionPane and JDialog
-            JOptionPane result = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
-            JDialog dialog = result.createDialog(frame, "Enter Book Details");
-            dialog.setSize(400, 180); // Set custom size
-            dialog.setVisible(true);
+	        JPanel panel = new JPanel(new GridLayout(4, 2, 5, 5));
+	        panel.add(new JLabel("Book Name:"));
+	        panel.add(bookNameField);
+	        panel.add(new JLabel("Author:"));
+	        panel.add(authorField);
+	        panel.add(new JLabel("Year of Publication:"));
+	        panel.add(yearField);
+	        panel.add(new JLabel("Stock:"));
+	        panel.add(stockField);
 
-            // Get the user's choice from the JOptionPane
-            Object selectedValue = result.getValue();
-            if (selectedValue != null && (int) selectedValue == JOptionPane.OK_OPTION) {
-                // Retrieve input values
-                String bookName = bookNameField.getText().trim();
-                String author = authorField.getText().trim();
-                String year = yearField.getText().trim();
+	        JOptionPane result = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
+	        JDialog dialog = result.createDialog(frame, "Enter Book Details");
+	        dialog.setSize(400, 200); // Set custom size
+	        dialog.setVisible(true);
 
-                if (!bookName.isEmpty() && !author.isEmpty() && !year.isEmpty()) {
-                    try {
-                        Integer.parseInt(year); // Validate year as a number
-                        ArrayList<String[]> books = BookDatabase.readBooksFromFile();
-                        boolean exists = books.stream().anyMatch(book -> book[0].equalsIgnoreCase(bookName));
-                        if (exists) {
-                            JOptionPane.showMessageDialog(frame, "Book already exists in the database.");
-                        } else {
-                            books.add(new String[]{bookName, author, year, "Available"});
-                            BookDatabase.writeBooksToFile(books);
-                            JOptionPane.showMessageDialog(frame, "Book added successfully!");
-                        }
-                    } catch (NumberFormatException ex) {
-                        JOptionPane.showMessageDialog(frame, "Year must be a valid number.");
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(frame, "All fields are required.");
-                }
-            }
+	        Object selectedValue = result.getValue();
+	        if (selectedValue != null && (int) selectedValue == JOptionPane.OK_OPTION) {
+	            // Retrieve input values
+	            String bookName = bookNameField.getText().trim();
+	            String author = authorField.getText().trim();
+	            String year = yearField.getText().trim();
+	            String stock = stockField.getText().trim();
 
-        });
+	            // Validate inputs
+	            if (bookName.isEmpty() || author.isEmpty() || year.isEmpty() || stock.isEmpty()) {
+	                JOptionPane.showMessageDialog(frame, "All fields are required.");
+	                return;
+	            }
+
+	            try {
+	                Integer.parseInt(year); // Validate year as a number
+	                int stockValue = Integer.parseInt(stock); // Validate stock as a positive number
+	                if (stockValue <= 0) {
+	                    throw new NumberFormatException("Stock must be a positive integer.");
+	                }
+
+	                // Read and check if the book already exists
+	                ArrayList<String[]> books = BookDatabase.readBooksFromFile();
+	                boolean exists = books.stream().anyMatch(book -> book[0].equalsIgnoreCase(bookName));
+	                if (exists) {
+	                    JOptionPane.showMessageDialog(frame, "Book already exists in the database.");
+	                } else {
+	                    // Add the new book with correct structure
+	                    books.add(new String[]{bookName, author, year, "Available", String.valueOf(stockValue)});
+	                    BookDatabase.writeBooksToFile(books);
+	                    JOptionPane.showMessageDialog(frame, "Book added successfully!");
+	                }
+	            } catch (NumberFormatException ex) {
+	                JOptionPane.showMessageDialog(frame, "Year and Stock must be valid numbers.\n" + ex.getMessage());
+	            } catch (Exception ex) {
+	                JOptionPane.showMessageDialog(frame, "An error occurred while adding the book.\n" + ex.getMessage());
+	            }
+	        }
+	    });
+
 
         removeBookButton.addActionListener(e -> {
             ArrayList<String[]> books = BookDatabase.readBooksFromFile();
